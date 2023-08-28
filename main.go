@@ -4,7 +4,9 @@ import (
 	"cloud.google.com/go/bigquery"
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"log"
 	"math/big"
@@ -37,13 +39,6 @@ func main() {
 	}
 	defer client.Close()
 
-	//dataset := client.Dataset(datasetID)
-	//err = dataset.Table(tableID).Create(ctx, &bigquery.TableMetadata{
-	//	ExpirationTime: time.Now().Add(1 * time.Hour),
-	//})
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
 	tableRef := client.Dataset(datasetID).Table(tableID)
 	if _, err = tableRef.Metadata(ctx); err != nil {
 		var e *googleapi.Error
@@ -90,21 +85,21 @@ func main() {
 		log.Println("insert item ", i)
 	}
 
-	//query := client.Query("SELECT pspName, amount FROM `big-query-with-go.metric.deposit`")
-	//it, err := query.Read(ctx)
-	//if err != nil {
-	//	log.Fatalf("Failed to initiate read: %v", err)
-	//}
-	//
-	//for {
-	//	var item Deposit
-	//	err = it.Next(&item)
-	//	if errors.Is(err, iterator.Done) {
-	//		break
-	//	}
-	//	if err != nil {
-	//		log.Fatalf("Failed to read data: %v", err)
-	//	}
-	//	fmt.Printf("Name: %s, Value: %v\n", item.PspName, item.Amount)
-	//}
+	query := client.Query("SELECT pspName, amount FROM `big-query-with-go.metric.deposit`")
+	it, err := query.Read(ctx)
+	if err != nil {
+		log.Fatalf("Failed to initiate read: %v", err)
+	}
+
+	for {
+		var item Deposit
+		err = it.Next(&item)
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Failed to read data: %v", err)
+		}
+		fmt.Printf("Name: %s, Value: %v\n", item.PspName, item.Amount)
+	}
 }
